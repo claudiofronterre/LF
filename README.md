@@ -2,7 +2,7 @@
 This repository contains the R code and documentation for the development of spatial predictive model for [Lymphatic Filariasis](http://www.who.int/lymphatic_filariasis/disease/en/) when two different diagnostics are used.
 
 ## To do
-- [ ] Read LF papers
+- [X] Read LF papers
 - [ ] Create R functions for the two models
 - [ ] Finish to test the models
 - [ ] Generate predictions for the entire continent
