@@ -4,16 +4,30 @@ pkgs = c("sp", "mapview", "tmap") # package names
 pacman::p_load(pkgs, character.only = T)
 
 # Load and clean data --------------
-lf <- rgdal::readOGR("data/LF_SiteLevel_Dataset_Feb2018.shp")
+lf <- read.csv("data/LF_Site_Level_Data_Feb2018.csv")
 
-# Change projection (use one tha preserves the distance)
-proj4string(lf)
-lf <- spTransform(lf, CRS("+init=epsg:3857 +units=km"))
+# Remove inconsistent and not useful points
+lf <- lf[!is.na(lf$Examined), ] # Remove sites with Examined = NA
+lf <- lf[lf$Examined >= lf$Positive, ] # Remove sites with Examined < Positive
+lf <- lf[lf$Examined != 0, ] # Remove sites with Examined = 0
+lf <- lf[lf$Method_0 == "Mapping survey" & lf$PoT == "Preintervention", ]
+
+# Check if important columns have NA and remove them
+View(apply(lf, 2, function(x) sum(is.na(x))))
+
+#
+
+# Change projection (use one that preserves the distance)
+lf_sp <- lf
+coordinates(lf_sp) <- ~ Longitude + Latitude
+proj4string(lf_sp) <- CRS("+init=epsg:4326")
+lf_sp <- spTransform(lf_sp, CRS("+init=epsg:3857 +units=km"))
 
 # Visualisation -----------------
 
 # Interactive visualisation of data
-mapView(lf, zcol = c("PoT", "Prevalence", "Method_1"), legend = F, burst = T, hide = T)
+mapView(lf_sp, zcol = "Examined", legend = T, at = c(1, 50, 100, 500, 1000, 5000), cex = "Examined")
+mapView(lf_sp, zcol = c("PoT", "Prevalence", "Method_1"), legend = T, burst = T, hide = T)
 
 # Static visualization of data
 africa <- rgdal::readOGR("data/Africa.shp")
@@ -23,7 +37,7 @@ africa <- spTransform(africa, proj4string(lf))
 map <- tm_shape(africa) +
   tm_borders("black") +
   tm_fill("white") +
-       tm_shape(lf) +
+       tm_shape(lf_sp) +
   tm_symbols(col = "Method_1", title.col = "Survey data by\ndiagnostic method", 
              size = .05, border.col = "black", palette = c("red", "blue")) +
   tm_compass(position = "left") +
@@ -31,3 +45,20 @@ map <- tm_shape(africa) +
   tm_scale_bar() 
 map      
 
+# tmap_mode(mode = "view")
+# map
+# ttm()
+
+# Select points where both diagnostics where used ------------------------------------------------
+ict <- which(lf$Method_1 == "Serological")
+mf <- which(lf$Method_1 == "Parasitological")
+lf_ict <- lf[ict, ]
+lf_mf <- lf[mf, ]
+lf_both <- merge(x = lf_mf, y = lf_ict, by = c("Country", "Latitude", "Longitude", "SurveyYear", "Examined"), 
+                 suffixes = c("_mf", "_ict"))
+lf_both$Country <- factor(lf_both$Country)
+table(lf_both$Country)
+lf_both <- lf_both[, c("Country", "Latitude", "Longitude", "SurveyYear", "Examined", "Positive_ict", "Positive_mf")]
+lf_both$Prevalence_ict <- lf_both$Positive_ict/lf_both$Examined
+lf_both$Prevalence_mf <- lf_both$Positive_mf/lf_both$Examined
+saveRDS(lf_both, file = "data/lf_both.rds")
