@@ -1,0 +1,76 @@
+---
+output: 
+  pdf_document:
+    citation_package: natbib
+    keep_tex: true
+    fig_caption: true
+    latex_engine: pdflatex
+    template: template.tex
+title: "Semi-mechanistic model and its implementation in R"
+thanks: "**Corresponding author**: claudio.fronterre@lshtm.ac.uk."
+author:
+- name: Claudio Fronterrè
+  affiliation: London School of Hygiene and Tropical Medicine
+abstract: "This document provides details for the semi-mechanistic model developed to estimate MF prevalence when two different diagnostic tools are used. It also shows how to implement it in R."
+keywords: "lymphatic filariasis, antigeamia, geostatistics"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+geometry: margin=1in
+fontfamily: mathpazo
+fontsize: 11pt
+#spacing: double
+bibliography: biblio2.bib
+biblio-style: apalike
+endnote: no
+editor_options: 
+  chunk_output_type: console
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, cache = T, fig.align = "center")
+if (!require("pacman")) install.packages("pacman")
+pkgs = c("sp", "geoR", "MBA", "spBayes", "fields", "PrevMap", "tmap", "ggplot2", 
+         "emojifont")
+pacman::p_load(pkgs, character.only = T)
+```
+
+# Introduction
+
+Lymphatic filariasis (LF) is a mosquito-borne neglected tropical disease targeted for global elimination by 2020. The majority of global cases are caused by three species of nematode worms: *Wuchereria bancrofti*, *Brugia malayi* and *Brugia timori*. These filariae parasites are transmitted by various species of mosquito vectors from the genera Anopheles, Aedes, Culex, Mansonia and Ochlerotatus. In recent years, the mapping of LF has been greatly facilitated by the use of simple and rapid detection tests for *W. bancrofti* (antigen-based test) and *Brugia* (antibody-based test), based on the immuno-chromatographic test (ICT card test), which avoids the need to collect blood at night and the time-consuming preparation and examination of blood slides. While it is known that estimates of antigenaemia are generally higher than estimates of microfilaraemia (MF), the extent and spatial heterogeneity of this relationship is not clear. Even if the scientific output of interest is the prevalence of microfilaraemia, the small number of mapping surveys that measure mf is low and it is decreasing due to the diffusion and cost-effectivness of ICT tests. Our goal is to use the abundace of ICT prevalence surveys and the relationship between ICT and MF prevalence to predict microfilaraemia prevalence at unobserved locations. 
+
+# Modeling framework
+We can define our set of data as follow:
+$$\mathcal{D}=\left\{ \left(x_{i,j},n_{i,j},y_{i,j}\right):x_{i,j}\in A\right\} ,i=1,\ldots,n_{j},j=1,2; \label{eq:data}$$
+where $x$ is the geograpich location of the mapping survey, $y$ is the number of people infected out of $n$ examined and $j$ indicate which type of prevalence was measured, $1 = MF$ and $2 = ICT$. Our final target of estimation is the predictive distribution of MF prevalance given ICT prevalence $\left[Y_1 \mid Y_2, S\right]$. We can consider the observed prevalence as the realisation of a binomial random variable
+$$Y_{i,j} \mid S_j(x_ij),Z_{i,j} \sim \text{Binomial}(n_i,j,p_j(x_{i,j})).$$
+We use biological information to define the probability of being tested as postive
+\[
+p_{j}\left(x\right)=\begin{cases}
+1-\exp\left\{ -\lambda\left(x\right)\left[1-\exp\left(-\alpha\right)\right]\right\} & j=1 \\
+\phi\left\{ 1-\exp\left[-\lambda\left(x\right)\right]\right\} & j=2
+\end{cases}
+\]
+where $\alpha$ is a parameter that control the reproductive rate of MF, $\phi$ is the sensitivy of the ICT test and $\lambda(x)$ is the mean number of adult worms in a sampled individual. The last one is assumed to vary spatially using the following specification
+$$\log{\lambda(x)}=d(x)^\text{T}\beta+S(x)+Z.$$
+
+## Lieklihood
+
+Let $\theta$ be the vector of model parameters to be estimated. The log-likelihood for this model is
+$$l\left(\theta\right)=\sum_{j=1}^{2}\left[n_{j}\sum_{i=1}^{n}\log\left(1-p_{i,j}\right)+\sum_{i=1}^{n}\log\left(\frac{p_{i,j}}{1-p_{i,j}}\right)\right].$$
+
+# Implementation in R
+
+
+
+
+
+
+
+
+
+<!--
+# References
+\setlength{\parindent}{-0.2in}
+\setlength{\leftskip}{0.2in}
+\setlength{\parskip}{8pt}
+\vspace*{-0.2in}
+\noindent
+-->
